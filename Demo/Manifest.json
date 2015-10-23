@@ -1,0 +1,16 @@
+{
+"AppName":"Demo",
+"ResFile":[
+	"js/angular.min.js", "js/testRes.js","",
+	"js/demo.js"
+	],
+"ResName":[
+	"angular", "testRes", "",
+	"demo"
+],
+"Res":{
+	"ID":"6OkFeZw0sk3p0S0UrAPX0TJfhpabpgNIr-IgVGoRiZQ",
+	"PPT":"",
+	"URL":"http://127.0.0.11:9000/"
+	}
+}

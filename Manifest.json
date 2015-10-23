@@ -1,0 +1,23 @@
+{
+"AppName":"Weibo",
+"ResFile":[
+	"js/jquery.min.js","js/angular.min.js","",
+	"js/jquery.jtabs.js","js/easydialog.min.js","js/jquery.colorbox.js","js/jquery.lazyload.js",
+	"app/GlobalDataStruct.js" ,"lib/angular-ui-router.min.js", "lib/angular-sanitize.js","lib/ui-bootstrap-tpls.min.js",
+	"lib/FileSaver.min.js","",
+	"app/main.js" , "app/account.js", "app/message.js", "app/sms.js", "app/states.js",
+	"app/rootModule.js", "app/review.js", "app/directives.js" ,"res.js" ,"",
+	"weibo.js"
+	],
+"ResName":[
+	"jquery", "angular", "", 
+	"jtabs", "easydialog","colorbox","lazyload" ,"GlobalDataStruct","ui-router","sanitize","tpls","FileSaver", "",
+	"main", "account", "message", "sms", "states", "rootModule", "review", "directives", "res", "",
+	"weibo"
+],
+"Res":{
+	"ID":"HrrkEYTTtKpj9TywryqINhe_mezROBEwkqOTkeIaric",
+	"PPT":"",
+	"URL":"http://121.43.154.122:8888/"
+	}
+}
