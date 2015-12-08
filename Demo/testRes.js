@@ -44,6 +44,7 @@
         </p>              
         <p>
         <button ng-click="showkeys()">showkeys</button>
+        <button ng-click="sendmail()">sendmail</button>
         <button ng-click="addfriend()">添加好友</button>
         <button ng-click="nearby()">附近好友</button>        
         <button ng-click="test()">测试</button>
@@ -86,7 +87,9 @@
         <!--  p><button ng-click="rollback()">rollback</button></p-->
         <p><button ng-click="lpush()">lpush</button>   <button ng-click="lpop()">lpop</button>
         <button ng-click="rpush()">rpush</button>   <button ng-click="rpop()">rpop</button>
-        <button ng-click="lrange()">lrange</button></p>  
+        <button ng-click="lrange()">lrange</button> <button ng-click="lset()">lset</button>
+        <button ng-click="lindex()">lindex</button> <button ng-click="llen()">llen</button>
+        </p>  
         <p>
         <button ng-click="Sadd()">sadd</button> <button ng-click="scard()">scard</button>
         <button ng-click="Sclear()">Sclear</button> <button ng-click="sdiff()">sdiff</button>

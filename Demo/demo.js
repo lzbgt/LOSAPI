@@ -4,6 +4,9 @@
 if (!window.localStorage) {
     alert('This browser does NOT support localStorage');
 }
+var username = "demouser5"
+var userpass = "password"
+var email = "lsb@softright.cn"
 var resid = ""
 function FVPair() { }
 function ScorePair() { }
@@ -63,7 +66,8 @@ function Login($scope) {
     }
     debug.log("Login:" + bid);
     client.ready(function (stub) {
-    stub.login(bid, ppt, function (reply) {
+        //stub.login(bid, ppt, "byname", function (reply) {
+        stub.login(username, userpass, "byname", function (reply) {
         debug.log("login ok reply=", reply)
         sid = reply.sid
         $scope.sid = sid
@@ -577,10 +581,11 @@ function UserInfoCtrl($scope, $http) {
             $scope.count = $scope.count + 1
         }
         $scope.lpush = function () {
-            var msg = new Message()
-            msg.from = "from"
-            msg.to = "to"
-            msg.num = $scope.count
+            //var msg = new Message()
+            //msg.from = "from"
+            //msg.to = "to"
+            //msg.num = $scope.count
+            msg = $scope.count
             client.lpush($scope.sid, $scope.bid, "keypush", msg, msg, function (data) {
                 //$scope.bid = data[0]
                 $scope.appstatus = "lpush ok num" + data
@@ -592,11 +597,53 @@ function UserInfoCtrl($scope, $http) {
                 $scope.$apply()
             })
         }
+        $scope.lset = function () {
+ //           var msg = new Message()
+   //         msg.from = "from"
+     //       msg.to = "toooo"
+            msg = $scope.count
+            client.lset($scope.sid, $scope.bid, "keypush", 1, msg, function () {
+                $scope.appstatus = "lset ok"
+                debug.log($scope.appstatus);
+                $scope.$apply()
+            }, function (name, err) {
+                debug.log(err);
+                $scope.appstatus = "lset error"
+                $scope.$apply()
+            })
+        }
+        $scope.llen = function () {
+            client.llen($scope.sid, $scope.bid, "keypush", function (data) {
+                $scope.appstatus = "llen ok.value.len=[" + data + "]"
+                $scope.inputest = data
+                $scope.$apply()
+                debug.log($scope.appstatus);
+            }, function (name, err) {
+                debug.log(err);
+                $scope.appstatus = "llen error"
+                $scope.$apply()
+            })
+        }
+        $scope.lindex = function () {
+            client.lindex($scope.sid, $scope.bid, "keypush", 1, function (data) {
+                if (data != null) {
+                    $scope.appstatus = "lindex ok.value.num=[" + data+ "]"
+                } else {
+                    $scope.appstatus = "lindex ok.value.num=[empty]"
+                }
+                $scope.$apply()
+                debug.log($scope.appstatus);
+            }, function (name, err) {
+                debug.log(err);
+                $scope.appstatus = "lindex error"
+                $scope.$apply()
+            })
+        }
         $scope.lpop = function () {
             client.lpop($scope.sid, $scope.bid, "keypush", function (data) {
                 //$scope.bid = data[0]
                 if (data != null) {
-                    $scope.appstatus = "lpop ok.value.num=[" + data.num + "]"
+                    $scope.appstatus = "lpop ok.value.num=[" + data + "]"
                 } else {
                     $scope.appstatus = "lpop ok.value.num=[empty]"
                 }
@@ -609,10 +656,10 @@ function UserInfoCtrl($scope, $http) {
             })
         }
         $scope.rpush = function () {
-            var msg = new Message()
-            msg.from = "from"
-            msg.to = "to"
-            msg.num = $scope.count
+ //           var msg = new Message()
+   //         msg.from = "from"
+     //       msg.to = "to"
+            msg = $scope.count
             client.rpush($scope.sid, $scope.bid, "keypush", msg, function (data) {
                 //$scope.bid = data[0]
                 $scope.appstatus = "rpush ok num" + data
@@ -628,7 +675,7 @@ function UserInfoCtrl($scope, $http) {
             client.rpop($scope.sid, $scope.bid, "keyrpush", function (data) {
                 //$scope.bid = data[0]            
                 if (data != null) {
-                    $scope.appstatus = "rpop ok.value.num=[" + data.num + "]"
+                    $scope.appstatus = "rpop ok.value.num=[" + data + "]"
                 } else {
                     $scope.appstatus = "rpop ok.value.num=[empty]"
                 }
@@ -640,8 +687,8 @@ function UserInfoCtrl($scope, $http) {
                 $scope.$apply()
             })
         }
-        $scope.lrange = function () {
-            client.lrange($scope.sid, $scope.bid, "keypush", 0, 10, function (data) {
+        $scope.lrange = function () {    
+            client.lrange($scope.sid, $scope.bid, "keypush", 0, -1, function (data) {
                 for (i = 0; i < data.length; i++) {
                     debug.log("lrange =", data[i])
                 }
@@ -1320,7 +1367,24 @@ function UserInfoCtrl($scope, $http) {
                 debug.log("cleardb fail" + err);
             })
         }
-
+        $scope.sendmail = function () {
+            debug.log("sendmail");
+                         
+            if ($scope.inputest == null || $scope.inputest.length == 0) {                
+                $scope.appstatus = "email is null";
+                $scope.$apply();
+                return;
+            } 
+            var email = $scope.inputest;
+            var subject = "leither email test subject";
+            var body = "<a>∑√Œ LOA</a>";
+            client.sendmail($scope.sid, email, subject, body, "html", function () {
+                debug.log("sendmail ok ")
+            }, function (name, err) {
+                debug.log("sendmail fail" + err);
+            })
+        }
+        
         $scope.test = function () {
             debug.log("test ")
             client.test($scope.sid, $scope.bid, function () {
@@ -1407,15 +1471,16 @@ function InitErrFunc() {
         debug.log("login error 2", le)
         if (le.ID == 14) {
             debug.log("login user invalid")
-            debug.log("register...");
-            G.api.register(function (data) {
+            debug.log("register...", username);
+  //          G.api.register(username, userpass, email, function (data) {
+            G.api.register( function (data) {
+                debug.log("register userid=", data);
                 saveLoginInfo(data, "")
                 RunAppByIP("")
-                debug.log("register userid=", data);
                 $scope.bid = data
                 $scope.$apply()
-            }, function (e) {
-                    debug.log(e);
+            }, function (name, error) {
+                    debug.log("register err:", name, error);
                     $scope.appstatus = "register error"
                     $scope.$apply()
             })    

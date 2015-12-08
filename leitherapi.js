@@ -36,12 +36,12 @@ function InitCache() {
   function doInvoke(param, resolve, reject) {
     // call original invoke
     param.invoke(function(s, param) {
-      //console.log("loaded from server: ", param, s);
+      //debug.log("loaded from server: ", param, s);
       var flag = TargetAPIs.some(function(e) {
         return param.name.indexOf(e) !== -1;
       });
 
-      console.log("do cache? : ", flag, param.name, param.args);
+      debug.log("do cache? : ", flag, param.name, param.args);
       if (!flag || param.nocache || s === null) {
         return resolve(s);
       }
@@ -52,16 +52,16 @@ function InitCache() {
           __is: "string",
           value: json
         };
-        //console.log("got string: ");
+        //debug.log("got string: ");
       } else if (typeof(s) == "object" && s != null) {
         if (Array.isArray(s)) {
           obj = {
             __is: "array",
             value: s
           };
-          //console.log("got array");
+          //debug.log("got array");
         } else {
-          //console.log("got object");
+          //debug.log("got object");
           obj = {
             __is: "object",
             value: s
@@ -80,15 +80,15 @@ function InitCache() {
         obj.__id = key;
         obj.__score = 0;
         obj.__ts = Date.now();
-        //console.log("myobj: ", key, obj, param.name, param.args);
+        //debug.log("myobj: ", key, obj, param.name, param.args);
         icache.db[icache.table].put(obj).then(function(s) {
-          //console.log("saved to db", s);
+          //debug.log("saved to db", s);
         }, function(e) {
-          console.warn("save to db error: ", e);
+          debug.warn("save to db error: ", e);
         });
       }
       if (param.skipResolve) {
-        //console.log("resolve skipped");
+        //debug.log("resolve skipped");
         if (typeof(param.asyncCall) == "function") {
           param.asyncCall(s);
         }
@@ -128,7 +128,7 @@ function InitCache() {
           // check if background fresh enabled
           if (param.background ||
             (typeof(param.background) == 'undefined' && icache.background)) {
-            console.log("fetching from icache.db with background enabled: ", key, value, param.name, param.args);
+            debug.log("fetching from icache.db with background enabled: ", key, value, param.name, param.args);
             resolve(value);
             param.skipResolve = true;
             doInvoke(param, resolve, reject);
@@ -140,25 +140,25 @@ function InitCache() {
             if (typeof(s.__ttl) == "undefined") {
               s.__ttl = icache.DEFAULT_TTL;
             }
-            //console.log("icache using default ttl: ", icache.DEFAULT_TTL);
+            //debug.log("icache using default ttl: ", icache.DEFAULT_TTL);
           } else {
             s.__ttl = param.ttl;
           }
 
           if (s.__ttl < (Date.now() - s.__ts)) {
-            console.log("ttl timeout, reload from server: ", key, param.name, param);
+            debug.log("ttl timeout, reload from server: ", key, param.name, param);
             doInvoke(param, resolve, reject);
           } else {
-            console.log("fetching from icache.db: ", key, value, param.name, param.args);
+            debug.log("fetching from icache.db: ", key, value, param.name, param.args);
             resolve(value);
           }
         }
       }, function(e) {
-        console.log("not in icache.db, fetching from server");
+        debug.log("not in icache.db, fetching from server");
         doInvoke(param, resolve, reject);
       });
     } else {
-      //console.log("not valid key, fetching from server", param.name, param.args);
+      //debug.log("not valid key, fetching from server", param.name, param.args);
       doInvoke(param, resolve, reject);
     }
   }
@@ -202,7 +202,7 @@ window.debug = {};
 
 function setLog(logLvl) {
   // default to warn
-  var lvl = 0;
+  var lvl = 2;
 
   // for compatibility of old api
   if (typeof logLvl === 'boolean') {
@@ -221,6 +221,8 @@ function setLog(logLvl) {
     window.debug[apiLogLevels[i]] = __no_op;
   }
 }
+
+window.setLog = setLog;
 
 function processError(name, err) {
   debug.error(name, err);
@@ -456,9 +458,15 @@ function SetDbData(value) {
 }
 
 function RunApp(I, ipnum) {
-  //debugger;
-  if(arguments.length = 0) return;
-  setLog(I.Log);
+  // CompilerFix:  workaround for undefined RunApp
+  if(arguments.length == 0) return;
+
+  if(typeof I.Log === "undefined") {
+    setLog(false)
+  }else{
+    setLog(I.Log);
+  }
+  
   G.I = I;
   G.appBid = I.AppBid;
   G.Running = false;
@@ -482,7 +490,7 @@ function RunApp(I, ipnum) {
 }
 
 window.RunApp = RunApp;
-
+// CompilerFix:  workaround for undefined RunApp
 window.RunApp()
 
 function processManifest(appBid, ver, data) {

@@ -31,7 +31,8 @@
             "sendmsg", "readmsg", "pullmsg", "invite", "accept", "test", "veni", "sethostip", "proxyget",
             "createinvcode", "getinvcodeinfo", "updateinvcode", "deleteinvcode",
             "setinvtemplate", "getinvtemplate", "getappdownloadkey", "getresbyname", "getgshorturlkey", "getlshorturlkey",
-            "incr", "zcard", "zcount", "zrem", "zscore", "zrank", "zrangebyscore"];
+            "incr", "zcard", "zcount", "zrem", "zscore", "zrank", "zrangebyscore",
+             "lindex", "lexpire", "lexpireat", "lttl", "lpersist", "llen", "sendmail","lset"];
             apiurl = "ws://" + ip + "/ws/";
             if (navigator.userAgent.indexOf("Firefox") != -1) {
                 apiurl = "http://" + ip + "/webapi/";
@@ -610,7 +611,7 @@ function getInitG() {
         Log: true,
 		SystemBid:"6OkFeZw0sk3p0S0UrAPX0TJfhpabpgNIr-IgVGoRiZQ",
 		AppBid:"6OkFeZw0sk3p0S0UrAPX0TJfhpabpgNIr-IgVGoRiZQ",
-		//IPList: ["121.43.154.122:8888"],
+		//IPList: ["121.40.244.135:8866"],
 		IPList: ["127.0.0.1:9000"],
 		AppName:"Demo",
         //AppData End
