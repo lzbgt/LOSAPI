@@ -1,34 +1,35 @@
 var path = require('path');
 var ClosureCompilerPlugin = require('webpack-closure-compiler');
 
+var appName = 'api';
+var plugins = [];
+var outputFile = 'leitherapi';
+
+var env = process.env.release;
+
+if (env) {
+  plugins.push(new ClosureCompilerPlugin({
+    language_in: 'ECMASCRIPT6',
+    language_out: 'ECMASCRIPT5',
+    compilation_level: 'SIMPLE'
+  }));
+  outputFile += '.min.js';
+} else {
+  outputFile += '.js';
+}
+
 module.exports = {
-  entry: path.join(__dirname, "/leitherapi.js"),
+  entry: path.join(__dirname, appName) + '.js',
   output: {
     path: __dirname,
-    filename: "leitherapi.min.js"
+    filename: outputFile
   },
   module: {
     loaders: [{
-        test: /\.js$/,
-        loader: "babel",
-        exclude: /(node_modules|bower_components)/
-      },
-      // {
-      //   test: /\.css$/,
-      //   loader: "style!css"
-      // },
-      // {
-      //   test: /(\.jsx|\.js)$/,
-      //   loader: "jshint-loader",
-      //   exclude: /node_modules/
-      // },
-    ]
+      test: /\.js$/,
+      loader: "babel",
+      exclude: /(node_modules|bower_components)/
+    }, ]
   },
-  plugins: [
-    new ClosureCompilerPlugin({
-      language_in: 'ECMASCRIPT6',
-      language_out: 'ECMASCRIPT5',
-      compilation_level: 'SIMPLE'
-    })
-  ]
+  plugins: plugins,
 };
