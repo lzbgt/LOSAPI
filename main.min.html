@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html >
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta http-equiv="X-UA-Compatible" content="IE=11,chrome=1;" />
+<script src="http://pv.sohu.com/cityjson?ie=utf-8"></script>
+
+<script type="text/javascript">
+
+(function(k){function g(e){if(h[e])return h[e].exports;var f=h[e]={exports:{},id:e,loaded:!1};k[e].call(f.exports,f,f.exports,g);f.loaded=!0;return f.exports}var h={};g.m=k;g.c=h;g.p="";return g(0)})([function(k,g){function h(){var a=location.href,c={},d=a.indexOf("?");if(-1!=d){var b=a.indexOf("#");-1!=b&&d<b&&(a=a.slice(0,b));a=a.substring(d+1,a.length).split("&");for(i=0;j=a[i];i++)c[j.substring(0,j.indexOf("="))]=j.substring(j.indexOf("=")+1,j.length)}return c}function e(a){var c=h(),d;for(d in c)"ip"==
+d?a.IPList=[c[d]]:"bid"==d?a.SystemBid=c[d]:a[d]=c[d];a.clearcache&&(console.log("clear cache"),indexedDB.deleteDatabase("LeitherApi"),localStorage.clear());console.log(a);IP=a.IPList[a.IPNum];"function"==typeof RunApp?RunApp(a,0):(leitherApi=localStorage.leitherApi)?(c=document.createElement("script"),c.type="text/javascript",c.textContent=localStorage.leitherApi,document.getElementsByTagName("head")[0].appendChild(c),RunApp(a,0)):l(IP,a.SystemBid,"LeitherApi","last",function(){RunApp(a,0)},f(a))}
+function f(a){return function(){a.IPNum++;a.IPNum>=a.IPList.length?console.log("Leither \u521d\u59cb\u5316\u5931\u8d25"):e(a)}}function m(a,c,d){var b=document.createElement("script");b.type="text/javascript";b.async="async";b.readyState?b.onreadystatechange=function(){if("loaded"==b.readyState||"complete"==b.readyState)b.onreadystatechange=null,c()}:b.onload=function(){c()};b.addEventListener("error",function(){d()});b.src=a;document.getElementsByTagName("head")[0].appendChild(b)}function l(a,c,
+d,b,e,f){url="http://"+a+"/loadres?type=application/javascript&bid="+c+"&name="+d+"&ver="+b;m(url,e,f)}e({Log:!0,AppVer:"last",Local:!1,IPNum:0})}]);
+
+</script>
+<title>LeitherApp</title>
+</head>
+<body id="LeitherBody"></body>
+</html>

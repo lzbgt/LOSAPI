@@ -1,13 +1,13 @@
 var path = require('path');
 var ClosureCompilerPlugin = require('webpack-closure-compiler');
 
-var appName = 'leither';
+var appName = 'main';
 var plugins = [];
-var outputFile = 'leitherapi';
+var outputFile = 'mainjs';
 
-var env = process.env.release;
+var env = process.env.debug;
 
-if (env) {
+if (!env) {
   plugins.push(new ClosureCompilerPlugin({
     language_in: 'ECMASCRIPT6',
     language_out: 'ECMASCRIPT5',
