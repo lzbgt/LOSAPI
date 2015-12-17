@@ -2,19 +2,16 @@ var Dexie = require("./Dexie.min.js");
 require("./hprose-html5.js");
 
 'use strict';
+
 // Bruce.Lu 2015-10-23 ICache
-function InitCache() {
-  //debug.log("in initcache 0");
+function initCache() {
   var TargetAPIs = ['get'];
   var icache = {};
   window.icache = icache;
-  //debug.log("in initcache 1");
   icache.db = new Dexie(G.AppName);
-  //debug.log("in initcache 2");
   var schema = {};
   icache.table = 'icache';
   schema[icache.table] = "__id,__score,__ts";
-  //debug.log("in initcache");
   try {
     icache.db.version(2).stores(schema);
     icache.db.open(); // After this line, database is ready to use.
@@ -23,7 +20,7 @@ function InitCache() {
     return;
   }
 
-  var DEFAULT_TTL = 60 * 1000 * 60 * 2; // cache 2 hours
+  var DEFAULT_TTL = 1000 * 60 * 60 * 24 * 60; // cache 2 month
   icache.DEFAULT_TTL = DEFAULT_TTL;
 
   function buildKeyForIdbObj(param) {
@@ -88,7 +85,7 @@ function InitCache() {
         });
       }
       if (param.skipResolve) {
-        //debug.log("resolve skipped");
+        debug.log("resolve skipped");
         if (typeof(param.asyncCall) == "function") {
           param.asyncCall(s);
         }
@@ -127,7 +124,7 @@ function InitCache() {
           }
           // check if background fresh enabled
           if (param.background ||
-            (typeof(param.background) == 'undefined' && icache.background)) {
+            (param.background === undefined && icache.background)) {
             debug.log("fetching from icache.db with background enabled: ", key, value, param.name, param.args);
             resolve(value);
             param.skipResolve = true;
@@ -136,11 +133,11 @@ function InitCache() {
           }
 
           // check ttl
-          if (typeof(param.ttl) == "undefined") {
-            if (typeof(s.__ttl) == "undefined") {
+          if (param.ttl === undefined) {
+            if (s.__ttl === undefined) {
               s.__ttl = icache.DEFAULT_TTL;
             }
-            //debug.log("icache using default ttl: ", icache.DEFAULT_TTL);
+            debug.log("icache using default ttl: ", icache.DEFAULT_TTL);
           } else {
             s.__ttl = param.ttl;
           }
@@ -317,7 +314,6 @@ window.LeitherIsOK = LeitherIsOK;
 function getErr() {}
 
 function setMain(info) {
-  debug.log("setMain: ", info);
   if (G.Running) {
     debug.warn("setMain: app running");
     return;
@@ -325,23 +321,20 @@ function setMain(info) {
   if (typeof(InitErrFunc) == "function") {
     InitErrFunc();
   }
-  if (typeof(main) == "undefined") {
+  if (main === undefined) {
     return;
   }
   debug.log("main function ok run it");
   G.Main = main;
 
-  debug.log("isok", LeitherIsOK);
-
   if (LeitherIsOK()) {
     G.Running = true;
-    debug.log("s1");
     RunInitFunc();
-    debug.log("s2", InitCache);
-    InitCache();
-    debug.log("s3");
+    debug.log("setMain s1", initCache);
+    initCache();
+    debug.log("setMain s2");
     main();
-    debug.log("called main()");
+    debug.log("setMain s3");
   } else {
     debug.log("Leither is not OK");
     errReply();
@@ -354,14 +347,13 @@ function readCacheVar(key, def) {
     return JSON.parse(v);
   }
   //debug.log("readCacheVar def:", def)
-  if (typeof(def) != "undefined") {
+  if (def !== undefined) {
     localStorage[key] = JSON.stringify(def);
   }
   return def;
 }
 
 function saveLoginInfo(uid, ppt) {
-  debug.log("saveLoginInfo uid:", uid, "ppt:", ppt);
   if (typeof(uid) != "string") {
     uid = "";
   }
@@ -390,24 +382,21 @@ function InitCfg(I) {
   G.userppt = I.userppt || readCacheVar(window.location.pathname + "/" + G.AppBid + "/ppt");
   G.AppName = I.AppName || readCacheVar(G.AppBid + "/appname");
   G.uid = I.userid || readCacheVar(window.location.pathname + "/" + G.AppBid + "/uid");
-  //debug.log("InitCfg end， uid=", G.uid)
   return true;
 }
 
 function InitDb() {
-  debug.log("InitDb");
   var future = new hprose.Future();
   var version = version || 2;
   var request = window.indexedDB.open("LeitherApi", version);
   G.ApptbName = G.appBid + "_" + G.AppName;
-  debug.log(G.ApptbName);
+  debug.log("InitDb:",G.ApptbName);
   request.onerror = function(e) {
     debug.error(e.currentTarget.error.message);
     future.reject(e);
   };
 
   request.onsuccess = function(e) {
-    debug.log("InitDb ok");
     var db = e.target.result;
     G.LeitherDb = db;
     future.resolve(db);
@@ -415,7 +404,6 @@ function InitDb() {
 
   request.onupgradeneeded = function(e) {
     var db = e.target.result;
-    //debug.log(db.objectStoreNames)
     if (!db.objectStoreNames.contains('res')) {
       db.createObjectStore('res', {
         keyPath: "id"
@@ -435,14 +423,12 @@ function GetDbData(key) {
   var tr = G.LeitherDb.transaction("res", 'readwrite');
   var store = tr.objectStore("res");
   var future = new hprose.Future();
-  debug.log('getdbdata ');
   request = store.get(key);
   request.onerror = function(e) {
     future.reject(e);
   };
   request.onsuccess = function(e) {
     future.resolve(e.target.result);
-    debug.log('getdbdata2 ', e.target.result);
   };
   return future;
 }
@@ -458,7 +444,7 @@ function SetDbData(value) {
   };
   request.onsuccess = function(e) {
     future.resolve(e.target.result);
-    debug.log('setdbdata: ', e.target.result)
+    // debug.log('setdbdata: ', e.target.result)
   };
   return future;
 }
@@ -467,7 +453,7 @@ function RunApp(I, ipnum) {
   // CompilerFix:  workaround for undefined RunApp
   if(arguments.length == 0) return;
 
-  if(typeof I.Log === "undefined") {
+  if(I.Log === undefined) {
     setLog(false)
   }else{
     setLog(I.Log);
@@ -497,10 +483,10 @@ function RunApp(I, ipnum) {
 
 window.RunApp = RunApp;
 // CompilerFix:  workaround for undefined RunApp
-window.RunApp()
+window.RunApp();
 
 function processManifest(appBid, ver, data) {
-  //debug.log("in processManifest");
+  debug.log("in processManifest");
   var future = new hprose.Future();
   var m = JSON.parse(data);
   var getList = function(res, version) {
@@ -508,46 +494,37 @@ function processManifest(appBid, ver, data) {
     if (version == "last" || version == "release") {
       thisVer = res[version];
     }
-    debug.log("loading resfiles for app: ", appBid, ", version:", thisVer, m);
     return res['ResFile'][thisVer];
   };
 
   var list = getList(m, ver);
   var getFs = function(i) {
-    //debug.log("getFs", i);
     var fs = [];
     for (; i < list.length; i++) {
       var key = list[i];
-      debug.log("load resfile with key:", key);
       if (key == "") {
         //i++;
         //break;
         debug.error("invliad key:", key);
         continue;
       }
-      //debug.log("push");
-      fs.push(loadJS(appBid, key));
-      //debug.log("push end");
-    }
 
-    //debug.log("all");
+      fs.push(loadJS(appBid, key));
+    }
     var Future = hprose.Future;
     Future.all(fs).then(function(values) {
-      debug.log("all promise", values);
       //setMain("processManifest loaded all resfiles");
       //if (i < list.length) {
       //    getFs(i);
       //}
       future.resolve();
     }, function(e) {
-      debug.log(e);
+      debug.warn(e);
       future.reject(e);
     });
-    //debug.log("all end");
   };
 
   getFs(0);
-  //debug.log("called fs0");
   return future;
 }
 
@@ -573,14 +550,13 @@ function RunAppByIP(ip) {
   }
   G.api = api(ip);
   InitDb().then(function(db) {
-    debug.log("hprose ready", db);
+    debug.log("db ready", db);
     G.api.ready(function(stub) {
-      debug.log("hprose ready ok");
       debug.log("G.uid=", G.uid);
       LoadApp(stub, G.AppName, G.AppBid, G.AppVer).then(function() {
         var errfunc = PE("login");
         G.postLogin = postLogin;
-        if (typeof ENABLE_UAC !== 'undefined' && ENABLE_UAC) {
+        if (ENABLE_UAC !== undefined && ENABLE_UAC) {
           setMain("UAC enabled, must redirect to the login page first");
         } else {
           stub.login(G.uid, G.userppt).then(function(reply) {
@@ -596,7 +572,7 @@ function RunAppByIP(ip) {
           }, errfunc);
         }
 
-        if (G.Local) {} else {
+        if (!G.Local) {
           debug.log("use remote files");
           //check newest api and app manifest
           stub.getresbyname(G.sid, G.SystemBid, "LeitherApi", G.AppVer, {
@@ -631,11 +607,11 @@ function RunAppByIP(ip) {
 
 function loadJS(appBid, key) {
   var future = new hprose.Future();
-  debug.log("load js ", key);
   var script = document.createElement("script");
   script.type = "text/javascript";
   GetDbData(key).then(function(d) {
     if (d) {
+      debug.log("load js res from db: ", key);
       script.textContent = d.data;
       document.getElementsByTagName("head")[0].appendChild(script);
       future.resolve(key);
@@ -647,6 +623,7 @@ function loadJS(appBid, key) {
           debug.error(reason);
           future.reject(key);
         };
+        debug.log("load js res from server: ", key);debug.log("load res from db: ", key);
         G.api.ready(function(stub) {
           debug.log(" G.api.ready");
           stub.get("", appBid, key, function(data) {
