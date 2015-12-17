@@ -39,21 +39,17 @@ function initCache() {
         return param.name.indexOf(e) !== -1;
       });
 
-      if(param.ttl !== undefined && param.ttl <= 0) {
-        reason = "cache disabled";
+      var reason = flag;
+      if (param.ttl !== undefined && param.ttl <= 0) {
         flag = false;
-      }else {
-        if(flag) {
-          reason = "ttl timeout";
-        }else{
-          reason = "false";
-        }
+        reason = "disabled"
       }
 
       debug.log("do cache?: ", reason, param.name, param.args, param.udata, s);
       if (!flag || param.nocache || s === null) {
         return resolve(s);
       }
+
       var obj = null;
       if (typeof(s) == "string" && s[0] == "{") {
         var json = JSON.parse(s);
@@ -210,22 +206,34 @@ window.debug = {};
 
 function setLog(logLvl) {
   // default to warn
-  var lvl = 2;
-
-  // for compatibility of old api
-  if (typeof logLvl === 'boolean') {
-    if (!logLvl) {
-      lvl = apiLogLevels.length;
+  var getLoglevel = function(levl){
+    // for compatibility of old api
+    var lvl = 2;
+    if (typeof levl === 'boolean') {
+      if (!logLvl) {
+        lvl = apiLogLevels.length;
+      }
+    } else if (typeof levl === 'number') {
+      lvl = logLvl;
     }
-  } else if (typeof logLvl === 'number') {
-    lvl = logLvl;
-  } else if (typeof logLvl === 'string') {
+
+    return lvl;
+  };
+
+  var lvl = 0;
+
+  if (typeof logLvl === 'string') {
     try{
-      lvl = parseInt(logLvl);
-    }catch(e) {
-      lvl = 2;
+      lvl = eval(logLvl);
+
+    } catch(e){
+      lvl = 2
     }
   }
+
+  lvl = getLoglevel(lvl);
+
+  console.log("loglevel: ", lvl);
 
   var __no_op = function() {};
   for (var i = lvl; i < apiLogLevels.length; i++) {
@@ -623,7 +631,7 @@ function loadJS(appBid, key) {
   script.type = "text/javascript";
   GetDbData(key).then(function(d) {
     if (d) {
-      debug.log("load js res from db: ", key, appBid);
+      debug.log("load js from db: ", key);
       script.textContent = d.data;
       document.getElementsByTagName("head")[0].appendChild(script);
       future.resolve(key);
@@ -638,6 +646,7 @@ function loadJS(appBid, key) {
         debug.log("load js res from server: ", key);debug.log("load res from db: ", key);
         G.api.ready(function(stub) {
           stub.get("", appBid, key, function(data) {
+            debug.log("load js from server: ", appBid, key);
             if (data) {
               debug.log("load js res from server: ", key, appBid);
               var r = new FileReader();
