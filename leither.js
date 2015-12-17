@@ -224,15 +224,13 @@ function setLog(logLvl) {
 
   var lvl = 0;
 
-  if (typeof logLvl === 'string') {
-    try{
-      lvl = eval(logLvl);
+  try{
+    lvl = eval(logLvl);
 
-    } catch(e){
-      lvl = 2
-    }
+  } catch(e){
+    lvl = 2
   }
-
+  
   lvl = getLoglevel(lvl);
 
   console.log("loglevel: ", lvl);
