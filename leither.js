@@ -207,30 +207,32 @@ var apiLogLevels = ['log', 'info', 'warn', 'error'];
 window.debug = {};
 
 function setLog(logLvl) {
-  // default to warn
   var getLoglevel = function(levl){
     // for compatibility of old api
-    var lvl = 2;
-    if (typeof levl === 'boolean') {
-      if (!logLvl) {
-        lvl = apiLogLevels.length;
-      }
-    } else if (typeof levl === 'number') {
-      lvl = logLvl;
+    // default to warn
+    var DEFAULT_LEVLE = 2;
+    var lvl = DEFAULT_LEVLE;
+    try{
+      lvl = eval(levl);
+    } catch(e){
+      lvl = DEFAULT_LEVLE;
     }
+
+    // special handler for 'bool' and 'string'
+    if (typeof lvl === 'boolean') {
+      if (!lvl) {
+        lvl = apiLogLevels.length;
+      }else{
+        lvl = DEFAULT_LEVLE;
+      }
+    } else if (typeof lvl === 'string') {
+      lvl = DEFAULT_LEVLE;
+    }
+
     return lvl;
   };
 
-  var lvl = 0;
-
-  try{
-    lvl = eval(logLvl);
-
-  } catch(e){
-    lvl = 2
-  }
-
-  lvl = getLoglevel(lvl);
+  var lvl = getLoglevel(logLvl);
 
   console.log("loglevel: ", lvl);
 
