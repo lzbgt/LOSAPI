@@ -218,7 +218,6 @@ function setLog(logLvl) {
     } else if (typeof levl === 'number') {
       lvl = logLvl;
     }
-
     return lvl;
   };
 
@@ -230,7 +229,7 @@ function setLog(logLvl) {
   } catch(e){
     lvl = 2
   }
-  
+
   lvl = getLoglevel(lvl);
 
   console.log("loglevel: ", lvl);
