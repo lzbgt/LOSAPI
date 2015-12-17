@@ -5,9 +5,9 @@ var appName = 'leither';
 var plugins = [];
 var outputFile = 'leitherapi';
 
-var env = process.env.release;
+var env = process.env.debug;
 
-if (env) {
+if (!env) {
   plugins.push(new ClosureCompilerPlugin({
     language_in: 'ECMASCRIPT6',
     language_out: 'ECMASCRIPT5',

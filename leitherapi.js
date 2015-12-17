@@ -50,7 +50,7 @@
 	'use strict';
 	// Bruce.Lu 2015-10-23 ICache
 	function InitCache() {
-	  debug.log("in initcache 0");
+	  //debug.log("in initcache 0");
 	  var TargetAPIs = ['get'];
 	  var icache = {};
 	  window.icache = icache;
@@ -247,6 +247,12 @@
 	    }
 	  } else if (typeof logLvl === 'number') {
 	    lvl = logLvl;
+	  } else if (typeof logLvl === 'string') {
+	    try {
+	      lvl = parseInt(logLvl);
+	    } catch (e) {
+	      lvl = 2;
+	    }
 	  }
 
 	  var __no_op = function () {};

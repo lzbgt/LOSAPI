@@ -1,15 +1,4 @@
 'use strict';
-function getInitG() {
-  return {
-    //AppData
-    Log: true,
-    AppVer: "last",
-    Local: false,
-    //AppData End
-    IPNum: 0
-  };
-}
-
 function getUrlPara() {
   var url = location.href;
   var paraObj = {};
