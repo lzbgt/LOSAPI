@@ -264,7 +264,7 @@ function PE(name) {
     if (G.ayFE[name]) {
       return G.ayFE[name](e);
     }
-    G.ayErr[name] = e; //LeitherErr(e)
+    G.ayErr[name] = e;
     debug.error(name + ":" + e);
   }
 }
@@ -458,7 +458,6 @@ function GetDbData(key) {
   };
   request.onsuccess = function(e) {
     future.resolve(e.target.result);
-    debug.log('getdbdata2 ', e.target.result);
   };
   return future;
 }
