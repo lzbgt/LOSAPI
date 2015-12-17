@@ -5,6 +5,7 @@ require("./hprose-html5.js");
 
 // Bruce.Lu 2015-10-23 ICache
 function initCache() {
+  //debug.log("in initcache 0");
   var TargetAPIs = ['get'];
   var icache = {};
   window.icache = icache;
@@ -20,7 +21,7 @@ function initCache() {
     return;
   }
 
-  var DEFAULT_TTL = 1000 * 60 * 60 * 24 * 60; // cache 2 month
+  var DEFAULT_TTL = 1000 * 60  * 60 * 24 * 365; // cache 1 year
   icache.DEFAULT_TTL = DEFAULT_TTL;
 
   function buildKeyForIdbObj(param) {
@@ -33,12 +34,23 @@ function initCache() {
   function doInvoke(param, resolve, reject) {
     // call original invoke
     param.invoke(function(s, param) {
-      //debug.log("loaded from server: ", param, s);
+      var reason = "";
       var flag = TargetAPIs.some(function(e) {
         return param.name.indexOf(e) !== -1;
       });
 
-      debug.log("do cache? : ", flag, param.name, param.args);
+      if(param.ttl !== undefined && param.ttl <= 0) {
+        reason = "cache disabled";
+        flag = false;
+      }else {
+        if(flag) {
+          reason = "ttl timeout";
+        }else{
+          reason = "false";
+        }
+      }
+
+      debug.log("do cache?: ", reason, param.name, param.args, param.udata, s);
       if (!flag || param.nocache || s === null) {
         return resolve(s);
       }
@@ -143,7 +155,6 @@ function initCache() {
           }
 
           if (s.__ttl < (Date.now() - s.__ts)) {
-            debug.log("ttl timeout, reload from server: ", key, param.name, param);
             doInvoke(param, resolve, reject);
           } else {
             debug.log("fetching from icache.db: ", key, value, param.name, param.args);
@@ -334,7 +345,7 @@ function setMain(info) {
     initCache();
     debug.log("setMain s2");
     main();
-    debug.log("setMain s3");
+    debug.log("setMain s3 main()");
   } else {
     debug.log("Leither is not OK");
     errReply();
@@ -429,6 +440,7 @@ function GetDbData(key) {
   };
   request.onsuccess = function(e) {
     future.resolve(e.target.result);
+    //debug.log('getdbdata2 ', e.target.result);
   };
   return future;
 }
@@ -508,9 +520,9 @@ function processManifest(appBid, ver, data) {
         debug.error("invliad key:", key);
         continue;
       }
-
       fs.push(loadJS(appBid, key));
     }
+
     var Future = hprose.Future;
     Future.all(fs).then(function(values) {
       //setMain("processManifest loaded all resfiles");
@@ -572,7 +584,7 @@ function RunAppByIP(ip) {
           }, errfunc);
         }
 
-        if (!G.Local) {
+        if (!G.Local){
           debug.log("use remote files");
           //check newest api and app manifest
           stub.getresbyname(G.sid, G.SystemBid, "LeitherApi", G.AppVer, {
@@ -611,7 +623,7 @@ function loadJS(appBid, key) {
   script.type = "text/javascript";
   GetDbData(key).then(function(d) {
     if (d) {
-      debug.log("load js res from db: ", key);
+      debug.log("load js res from db: ", key, appBid);
       script.textContent = d.data;
       document.getElementsByTagName("head")[0].appendChild(script);
       future.resolve(key);
@@ -625,14 +637,11 @@ function loadJS(appBid, key) {
         };
         debug.log("load js res from server: ", key);debug.log("load res from db: ", key);
         G.api.ready(function(stub) {
-          debug.log(" G.api.ready");
           stub.get("", appBid, key, function(data) {
-            debug.log("get ok: (appBid, key)  ", appBid, key);
             if (data) {
-              debug.log(" if (data)");
+              debug.log("load js res from server: ", key, appBid);
               var r = new FileReader();
               r.onload = function(e) {
-                debug.log(" SetDbData");
                 SetDbData({
                   id: key,
                   data: e.target.result,
