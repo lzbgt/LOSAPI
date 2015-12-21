@@ -203,6 +203,7 @@ var api = function(ip) {
   return hprose.Client.create(apiurl, ayapi);
 };
 
+window.api = api;
 var apiLogLevels = ['log', 'info', 'warn', 'error'];
 window.debug = {};
 
@@ -606,37 +607,39 @@ function RunAppByIP(ip) {
             debug.log("swarm=", reply.swarm);
             debug.log("appName=", G.AppName);
             setMain("after loaded app and logedin");
+
+            // get new leitherapi and manifest file
+            if (!G.Local) {
+              debug.log("use remote files");
+              //check newest api and app manifest
+              stub.getresbyname(G.sid, G.SystemBid, "LeitherApi", G.AppVer, {
+                handler: icache.handler,
+                ttl: 0
+              })
+                .then(function(data) {
+                  var r = new FileReader();
+                  r.onload = function(e) {
+                    debug.log("leitherApi re get ok");
+                    localStorage["leitherApi"] = e.target.result;
+                  };
+                  r.readAsText(new Blob([data]));
+                });
+              stub.hget(G.sid, G.AppBid, "applist", G.AppName, {
+                handler: icache.handler,
+                ttl: 0
+              })
+                .then(function(data) {
+                  debug.log("manifest re hget ok");
+                  SetDbData({
+                    id: G.AppName,
+                    data: data,
+                    tbname: G.ApptbName
+                  }).then();
+                });
+            }
           }, errfunc);
         }
 
-        if (!G.Local) {
-          debug.log("use remote files");
-          //check newest api and app manifest
-          stub.getresbyname(G.sid, G.SystemBid, "LeitherApi", G.AppVer, {
-              handler: icache.handler,
-              ttl: 0
-            })
-            .then(function(data) {
-              var r = new FileReader();
-              r.onload = function(e) {
-                debug.log("leitherApi re get ok");
-                localStorage["leitherApi"] = e.target.result;
-              };
-              r.readAsText(new Blob([data]));
-            });
-          stub.hget(G.sid, G.AppBid, "applist", G.AppName, {
-              handler: icache.handler,
-              ttl: 0
-            })
-            .then(function(data) {
-              debug.log("manifest re hget ok");
-              SetDbData({
-                id: G.AppName,
-                data: data,
-                tbname: G.ApptbName
-              }).then();
-            });
-        }
       });
     }, PE("api.ready"))
   }, PE("InitDb"));

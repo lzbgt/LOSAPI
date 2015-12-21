@@ -69,7 +69,7 @@
 	    return;
 	  }
 
-	  var DEFAULT_TTL = 60 * 1000 * 60 * 2; // cache 2 hours
+	  var DEFAULT_TTL = 1000 * 60 * 60 * 24 * 365; // cache 2 hours
 	  icache.DEFAULT_TTL = DEFAULT_TTL;
 
 	  function buildKeyForIdbObj(param) {
@@ -87,10 +87,17 @@
 	        return param.name.indexOf(e) !== -1;
 	      });
 
-	      debug.log("do cache? : ", flag, param.name, param.args);
+	      var reason = flag;
+	      if (param.ttl !== undefined && param.ttl <= 0) {
+	        flag = false;
+	        reason = "disabled";
+	      }
+
+	      debug.log("do cache?: ", reason, param.name, param.args, param.udata, s);
 	      if (!flag || param.nocache || s === null) {
 	        return resolve(s);
 	      }
+
 	      var obj = null;
 	      if (typeof s == "string" && s[0] == "{") {
 	        var json = JSON.parse(s);
@@ -191,7 +198,6 @@
 	            }
 
 	          if (s.__ttl < Date.now() - s.__ts) {
-	            debug.log("ttl timeout, reload from server: ", key, param.name, param);
 	            doInvoke(param, resolve, reject);
 	          } else {
 	            debug.log("fetching from icache.db: ", key, value, param.name, param.args);
@@ -233,27 +239,39 @@
 	  return hprose.Client.create(apiurl, ayapi);
 	};
 
+	window.api = api;
 	var apiLogLevels = ['log', 'info', 'warn', 'error'];
 	window.debug = {};
 
 	function setLog(logLvl) {
-	  // default to warn
-	  var lvl = 2;
-
-	  // for compatibility of old api
-	  if (typeof logLvl === 'boolean') {
-	    if (!logLvl) {
-	      lvl = apiLogLevels.length;
-	    }
-	  } else if (typeof logLvl === 'number') {
-	    lvl = logLvl;
-	  } else if (typeof logLvl === 'string') {
+	  var getLoglevel = function (levl) {
+	    // for compatibility of old api
+	    // default to warn
+	    var DEFAULT_LEVLE = 2;
+	    var lvl = DEFAULT_LEVLE;
 	    try {
-	      lvl = parseInt(logLvl);
+	      lvl = eval(levl);
 	    } catch (e) {
-	      lvl = 2;
+	      lvl = DEFAULT_LEVLE;
 	    }
-	  }
+
+	    // special handler for 'bool' and 'string'
+	    if (typeof lvl === 'boolean') {
+	      if (!lvl) {
+	        lvl = apiLogLevels.length;
+	      } else {
+	        lvl = DEFAULT_LEVLE;
+	      }
+	    } else if (typeof lvl === 'string') {
+	      lvl = DEFAULT_LEVLE;
+	    }
+
+	    return lvl;
+	  };
+
+	  var lvl = getLoglevel(logLvl);
+
+	  console.log("loglevel: ", lvl);
 
 	  var __no_op = function () {};
 	  for (var i = lvl; i < apiLogLevels.length; i++) {
@@ -283,7 +301,7 @@
 	    if (G.ayFE[name]) {
 	      return G.ayFE[name](e);
 	    }
-	    G.ayErr[name] = e; //LeitherErr(e)
+	    G.ayErr[name] = e;
 	    debug.error(name + ":" + e);
 	  };
 	}
@@ -471,14 +489,12 @@
 	  var tr = G.LeitherDb.transaction("res", 'readwrite');
 	  var store = tr.objectStore("res");
 	  var future = new hprose.Future();
-	  debug.log('getdbdata ');
 	  request = store.get(key);
 	  request.onerror = function (e) {
 	    future.reject(e);
 	  };
 	  request.onsuccess = function (e) {
 	    future.resolve(e.target.result);
-	    debug.log('getdbdata2 ', e.target.result);
 	  };
 	  return future;
 	}
@@ -544,7 +560,6 @@
 	    if (version == "last" || version == "release") {
 	      thisVer = res[version];
 	    }
-	    debug.log("loading resfiles for app: ", appBid, ", version:", thisVer, m);
 	    return res['ResFile'][thisVer];
 	  };
 
@@ -554,7 +569,6 @@
 	    var fs = [];
 	    for (; i < list.length; i++) {
 	      var key = list[i];
-	      debug.log("load resfile with key:", key);
 	      if (key == "") {
 	        //i++;
 	        //break;
@@ -629,34 +643,35 @@
 	            debug.log("swarm=", reply.swarm);
 	            debug.log("appName=", G.AppName);
 	            setMain("after loaded app and logedin");
-	          }, errfunc);
-	        }
 
-	        if (G.Local) {} else {
-	          debug.log("use remote files");
-	          //check newest api and app manifest
-	          stub.getresbyname(G.sid, G.SystemBid, "LeitherApi", G.AppVer, {
-	            handler: icache.handler,
-	            ttl: 0
-	          }).then(function (data) {
-	            var r = new FileReader();
-	            r.onload = function (e) {
-	              debug.log("leitherApi re get ok");
-	              localStorage["leitherApi"] = e.target.result;
-	            };
-	            r.readAsText(new Blob([data]));
-	          });
-	          stub.hget(G.sid, G.AppBid, "applist", G.AppName, {
-	            handler: icache.handler,
-	            ttl: 0
-	          }).then(function (data) {
-	            debug.log("manifest re hget ok");
-	            SetDbData({
-	              id: G.AppName,
-	              data: data,
-	              tbname: G.ApptbName
-	            }).then();
-	          });
+	            // get new leitherapi and manifest file
+	            if (!G.Local) {
+	              debug.log("use remote files");
+	              //check newest api and app manifest
+	              stub.getresbyname(G.sid, G.SystemBid, "LeitherApi", G.AppVer, {
+	                handler: icache.handler,
+	                ttl: 0
+	              }).then(function (data) {
+	                var r = new FileReader();
+	                r.onload = function (e) {
+	                  debug.log("leitherApi re get ok");
+	                  localStorage["leitherApi"] = e.target.result;
+	                };
+	                r.readAsText(new Blob([data]));
+	              });
+	              stub.hget(G.sid, G.AppBid, "applist", G.AppName, {
+	                handler: icache.handler,
+	                ttl: 0
+	              }).then(function (data) {
+	                debug.log("manifest re hget ok");
+	                SetDbData({
+	                  id: G.AppName,
+	                  data: data,
+	                  tbname: G.ApptbName
+	                }).then();
+	              });
+	            }
+	          }, errfunc);
 	        }
 	      });
 	    }, PE("api.ready"));
@@ -665,11 +680,11 @@
 
 	function loadJS(appBid, key) {
 	  var future = new hprose.Future();
-	  debug.log("load js ", key);
 	  var script = document.createElement("script");
 	  script.type = "text/javascript";
 	  GetDbData(key).then(function (d) {
 	    if (d) {
+	      debug.log("load js from db: ", key);
 	      script.textContent = d.data;
 	      document.getElementsByTagName("head")[0].appendChild(script);
 	      future.resolve(key);
@@ -682,14 +697,11 @@
 	          future.reject(key);
 	        };
 	        G.api.ready(function (stub) {
-	          debug.log(" G.api.ready");
 	          stub.get("", appBid, key, function (data) {
-	            debug.log("get ok: (appBid, key)  ", appBid, key);
+	            debug.log("load js from server: ", appBid, key);
 	            if (data) {
-	              debug.log(" if (data)");
 	              var r = new FileReader();
 	              r.onload = function (e) {
-	                debug.log(" SetDbData");
 	                SetDbData({
 	                  id: key,
 	                  data: e.target.result,
