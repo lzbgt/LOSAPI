@@ -19,7 +19,7 @@ if (!env) {
 }
 
 module.exports = {
-  entry: path.join(__dirname, appName) + '.js',
+  entry: path.join(__dirname+'/src', appName) + '.js',
   output: {
     path: __dirname,
     filename: outputFile
